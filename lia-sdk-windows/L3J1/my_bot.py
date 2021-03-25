@@ -79,7 +79,7 @@ class MyBot(Bot):
                 api.say_something(unit["id"], f"I'm now camper")
                 campers.append(unit["id"])
 
-            if unit["id"] in campers:
+            if unit["id"] in campers and 140 > state["time"] :
                 diff_x = unit["x"]-get_enemy_spawnpoint(6)["x"]
                 diff_y = unit["y"]-get_enemy_spawnpoint(6)["y"]
                 if abs(unit["x"] - get_enemy_spawnpoint(6)["x"]) < 3 and abs(unit["y"] - get_enemy_spawnpoint(6)["y"]) < 3:
