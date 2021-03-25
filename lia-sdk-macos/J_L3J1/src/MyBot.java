@@ -111,22 +111,35 @@ public class MyBot implements Bot {
 
     private void shoot(GameState state, Api api, UnitData unit) {
         OpponentInView opponent = unit.opponentsInView[0];
+        boolean friendlyFire = false;
         float opponentDistance = MathUtil.distance(opponent.x, opponent.y, unit.x, unit.y);
         for (UnitData teammate : state.units) {
             float friendDistance = MathUtil.distance(teammate.x, teammate.y, unit.x, unit.y);
             float friendAngle = MathUtil.angleBetweenUnitAndPoint(unit, teammate.x, teammate.y);
-            if (Math.abs(friendAngle) <= 10 && friendDistance < opponentDistance) {
-                api.saySomething(unit.id, "CAN\'T SHOOT!");
-            } else {
-                api.shoot(unit.id);
+            if (teammate.x == unit.x && teammate.y == unit.y) {
+                continue;
+            } if (friendDistance + 1 > opponentDistance) {
+                continue;
+            } else if (friendDistance < 5 && Math.abs(friendAngle) <= 40) {
+                friendlyFire = true;
+                break;
+            } else if (friendDistance < 10 && Math.abs(friendAngle) <= 20) {
+                friendlyFire = true;
+                break;
+            } else if (Math.abs(friendAngle) <= 10 && friendDistance < opponentDistance) {
+                friendlyFire = true;
+                break;
             }
         }
-
-
+        if (friendlyFire) {
+            api.saySomething(unit.id, "CAN\'T SHOOT!");
+        } else {
+            api.shoot(unit.id);
+        }
     }
 
     private void evade(GameState state, Api api, UnitData unit) {
-        if (state.time < 20) {
+        /*if (state.time < 20) {
             return;
         }
         api.setSpeed(unit.id, Speed.FORWARD);
@@ -140,7 +153,7 @@ public class MyBot implements Bot {
         } else {
             api.saySomething(unit.id, "Can\'t catch me!");
             api.setRotation(unit.id, Rotation.LEFT);
-        }
+        }*/
     }
 
     private void fight(GameState state, Api api, UnitData unit) {
@@ -181,9 +194,9 @@ public class MyBot implements Bot {
         } else if (aimAngle <= 15 && aimAngle >= -15) {
             api.setSpeed(unit.id, Speed.FORWARD);
             if (aimAngle < 0) {
-                api.setRotation(unit.id, Rotation.SLOW_RIGHT);
+                api.setRotation(unit.id, Rotation.RIGHT);
             } else {
-                api.setRotation(unit.id, Rotation.SLOW_LEFT);
+                api.setRotation(unit.id, Rotation.LEFT);
             }
         } else {
             api.setSpeed(unit.id, Speed.NONE);
