@@ -12,7 +12,7 @@ from lia.networking_client import connect
 
 campers = []
 
-def get_enemy_spawnpoint(offset):
+def get_enemy_spawnpoint(offset=0):
     offset = offset if constants.SPAWN_POINT.x < 0.5 * constants.MAP_WIDTH else -offset
     enemy_spawn_x = constants.MAP_WIDTH - constants.SPAWN_POINT.x + offset
     enemy_spawn_y =  constants.MAP_HEIGHT - constants.SPAWN_POINT.y + offset
@@ -36,11 +36,13 @@ class MyBot(Bot):
                 if unit["type"] == UnitType.WARRIOR:
                     if campers == []: campers.append(unit["id"])
 
+        id_list = []
         number_of_workers = 0
+        number_of_warriors = 0
         for unit in state["units"]:
-
-            if unit["type"] == UnitType.WORKER:
-                number_of_workers += 1
+            id_list.append(unit["id"])
+            if unit["type"] == UnitType.WORKER: number_of_workers += 1
+            else: number_of_warriors += 1
         # If from all of your units less than 60% are workers
         # and you have enough resources, then create a new worker.
         if number_of_workers / len(state["units"]) < 0.45 and constants.GAME_DURATION * 0.533 > state["time"]:
@@ -73,23 +75,23 @@ class MyBot(Bot):
 
             # If the unit is a worker and it sees at least one resource
             # then make it go to the first resource to collect it.
-            if any(item in campers for item in state["units"]) and unit["type"] == UnitType.WARRIOR:
+            if not any(item in campers for item in id_list) and unit["type"] == UnitType.WARRIOR and number_of_warriors >= 5:
                 api.say_something(unit["id"], f"I'm now camper")
                 campers.append(unit["id"])
 
-            if unit["id"] in campers:
+            if unit["id"] in campers and 140 > state["time"] :
                 diff_x = unit["x"]-get_enemy_spawnpoint(6)["x"]
                 diff_y = unit["y"]-get_enemy_spawnpoint(6)["y"]
                 if abs(unit["x"] - get_enemy_spawnpoint(6)["x"]) < 3 and abs(unit["y"] - get_enemy_spawnpoint(6)["y"]) < 3:
                     api.navigation_stop(unit["id"])
                     api.say_something(unit["id"], f"I'm home")
-                    aim_angle = math_util.angle_between_unit_and_point(unit, get_enemy_spawnpoint(0)["x"], get_enemy_spawnpoint(0)["y"])
-                    if aim_angle < 0:
+                    aim_angle = math_util.angle_between_unit_and_point(unit, get_enemy_spawnpoint()["x"], get_enemy_spawnpoint()["y"])
+                    if len(unit["opponentsInView"]) > 0:
+                        api.shoot(unit["id"])
+                    if aim_angle < 12:
                         api.set_rotation(unit["id"], Rotation.RIGHT)
-                    elif aim_angle > 0:
+                    elif aim_angle > 12:
                         api.set_rotation(unit["id"], Rotation.LEFT)
-                    else: 
-                        api.set_rotation(unit["id"], Rotation.NONE)
                     if len(unit["opponentsInView"]) > 0:
                         api.shoot(unit["id"])
                 else:
