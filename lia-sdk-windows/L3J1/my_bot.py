@@ -80,8 +80,6 @@ class MyBot(Bot):
                 campers.append(unit["id"])
 
             if unit["id"] in campers and 140 > state["time"] :
-                diff_x = unit["x"]-get_enemy_spawnpoint(6)["x"]
-                diff_y = unit["y"]-get_enemy_spawnpoint(6)["y"]
                 if abs(unit["x"] - get_enemy_spawnpoint(6)["x"]) < 3 and abs(unit["y"] - get_enemy_spawnpoint(6)["y"]) < 3:
                     api.navigation_stop(unit["id"])
                     api.say_something(unit["id"], f"I'm home")
@@ -96,7 +94,6 @@ class MyBot(Bot):
                         api.shoot(unit["id"])
                 else:
                     api.navigation_start(unit["id"], get_enemy_spawnpoint(6)["x"], get_enemy_spawnpoint(6)["y"], False)
-                    api.say_something(unit["id"], f"{diff_x}, {diff_y}")
 
             if unit["type"] == UnitType.WORKER:
                 # Fallback if health is low
