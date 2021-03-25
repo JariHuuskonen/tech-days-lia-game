@@ -43,7 +43,7 @@ public class MyBot implements Bot {
                 if (unit.opponentsInView.length > 0) {
                     fight(state, api, unit);
                 } else {
-                    evade(api, unit);
+                    evade(state, api, unit);
                     communicate(state, api, unit);
                 }
             }
@@ -125,8 +125,11 @@ public class MyBot implements Bot {
 
     }
 
-    private void evade(Api api, UnitData unit) {
-        /*api.setSpeed(unit.id, Speed.FORWARD);
+    private void evade(GameState state, Api api, UnitData unit) {
+        if (state.time < 20) {
+            return;
+        }
+        api.setSpeed(unit.id, Speed.FORWARD);
         if (i % 30 == 0) {
             right = !right;
         }
@@ -137,7 +140,7 @@ public class MyBot implements Bot {
         } else {
             api.saySomething(unit.id, "Can\'t catch me!");
             api.setRotation(unit.id, Rotation.LEFT);
-        }*/
+        }
     }
 
     private void fight(GameState state, Api api, UnitData unit) {
