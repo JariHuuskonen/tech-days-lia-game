@@ -118,9 +118,9 @@ class MyBot(Bot):
                     aim_angle = math_util.angle_between_unit_and_point(unit, get_enemy_spawnpoint()["x"], get_enemy_spawnpoint()["y"])
                     if len(unit["opponentsInView"]) > 0:
                         api.shoot(unit["id"])
-                    if aim_angle < 12:
+                    if aim_angle < 15:
                         api.set_rotation(unit["id"], Rotation.RIGHT)
-                    elif aim_angle > 12:
+                    elif aim_angle > 15:
                         api.set_rotation(unit["id"], Rotation.LEFT)
                     if len(unit["opponentsInView"]) > 0:
                         api.shoot(unit["id"])
