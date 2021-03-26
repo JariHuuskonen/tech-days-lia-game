@@ -55,6 +55,7 @@ class MyBot(Bot):
             if unit["type"] == UnitType.WORKER: number_of_workers += 1
             else: number_of_warriors += 1
 
+        # Populate resources table used to coordinate nearby workers 
             if len(unit["resourcesInView"]) > 0:
                 for resource in unit["resourcesInView"]:
                     if {'x': resource["x"], 'y': resource["y"]} not in resources_list:
@@ -75,22 +76,20 @@ class MyBot(Bot):
             # If the unit is not going anywhere, we send it
             # to a random valid location on the map.
             
+            # If worker doesn't have path, send it to nearby target from resource list
             if unit["type"] == UnitType.WORKER and len(unit["resourcesInView"]) == 0 and len(resources_list) > 0 and len(unit["navigationPath"]) == 0:
                 destination = {"x": 0, "y": 0, "dist": math_util.distance(0,0,constants.MAP_WIDTH,constants.MAP_HEIGHT), "index": -1 }
                 for i, resource in enumerate(resources_list):
                     res_distance = math_util.distance(unit["x"], unit["y"], resource["x"], resource["y"])
-                    if not res_distance > constants.VIEWING_AREA_LENGTH * 2:
+                    if not res_distance > constants.VIEWING_AREA_LENGTH * 2.333:
                         if res_distance < destination["dist"]:
                             destination = {'x': resource["x"], 'y': resource["y"], 'dist': res_distance, 'index': i}
 
                 resources_list.pop(destination["index"])
                 api.say_something(unit["id"], "Rushing B")
                 api.navigation_start(unit["id"], destination["x"], destination["y"])
-                
 
             if len(unit["navigationPath"]) == 0:
-
-
                 # Generate new x and y until you get a position on the map
                 # where there is no obstacle.
                 while True:
