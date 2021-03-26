@@ -49,6 +49,8 @@ class MyBot(Bot):
         resources_list = []
         number_of_workers = 0
         number_of_warriors = 0
+        dang_x = 0
+        dang_y = 0
 
         for unit in state["units"]:
             id_list.append(unit["id"])
@@ -126,6 +128,11 @@ class MyBot(Bot):
                     api.navigation_start(unit["id"], get_enemy_spawnpoint(6)["x"], get_enemy_spawnpoint(6)["y"], False)
 
             if unit["type"] == UnitType.WORKER:
+                # Call for backup
+                if len(unit["opponentsInView"]) > 1:
+                    # api.say_something(unit["id"], "Calling for backup ai ai ai")
+                    dang_x = unit["x"]
+                    dang_y = unit["y"]
                 # Fallback if health is low
                 if unit["health"] < constants.BULLET_DAMAGE_TO_WORKER * 2:
                     api.navigation_start(unit["id"], constants.SPAWN_POINT.x, constants.SPAWN_POINT.y, True)
@@ -149,6 +156,11 @@ class MyBot(Bot):
 
             # If the unit is a warrior and it sees an opponent then make it shoot.
             if unit["type"] == UnitType.WARRIOR:
+                if not dang_x == 0 and not dang_y == 0 and len(unit["opponentsInView"]) == 0 and not unit["id"] in campers:
+                    api.say_something(unit["id"], "Roger that, COMING IN HOT!")
+                    api.navigation_start(unit["id"], dang_x, dang_y, False)
+                    dang_x = 0
+                    dang_y = 0
                 if len(unit["opponentsInView"]) > 0:
                     # api.say_something(unit["id"], "TROLOLOLOLO :D :---D")
                     opponent = unit["opponentsInView"][0]
