@@ -12,6 +12,10 @@ from lia.networking_client import connect
 campers = []
 corners = []
 
+def banter():
+    banter = ["Rush b", "Reporting in", "Tikka Masala", "U wot m8?", "Xaxaxa", str(2 ** 2 ** -1)]
+    return banter[random.randint(0, len(banter)-1)]
+
 def get_enemy_spawnpoint(offset=0):
     offset = offset if constants.SPAWN_POINT.x < 0.5 * constants.MAP_WIDTH else -offset
     enemy_spawn_x = constants.MAP_WIDTH - constants.SPAWN_POINT.x + offset
@@ -32,18 +36,6 @@ class MyBot(Bot):
             for unit in state["units"]:
                 if unit["type"] == UnitType.WARRIOR:
                     if campers == []: campers.append(unit["id"])
-                # elif unit["type"] == UnitType.WORKER:
-                #     if corners == []: 
-                #         corners.append(unit["id"])
-                #         coords = {"x": unit["x"], "y": get_enemy_spawnpoint()["y"]}
-                #         while not constants.MAP[coords["x"]][coords["y"]]:
-                #             offset_y = -2
-                #             offset_x = -2 if unit["x"] > 0.5 * constants.MAP_WIDTH else 2
-                #             coords["y"] = get_enemy_spawnpoint(offset_y)
-                #             coords["x"] += offset_x
-                #             offset_y -= offset_y
-                #             offset_x += offset_x
-                #         api.navigation_start(unit["id"], coords["x"], coords["y"], False)
 
         id_list = []
         resources_list = []
@@ -51,6 +43,10 @@ class MyBot(Bot):
         number_of_warriors = 0
         dang_x = 0
         dang_y = 0
+
+        
+        if state["time"] % 10: 
+            api.say_something(state["units"][random.randint(0, len(state["units"])-1)]["id"], banter())
 
         for unit in state["units"]:
             id_list.append(unit["id"])
@@ -88,7 +84,6 @@ class MyBot(Bot):
                             destination = {'x': resource["x"], 'y': resource["y"], 'dist': res_distance, 'index': i}
 
                 resources_list.pop(destination["index"])
-                api.say_something(unit["id"], "Rushing B")
                 api.navigation_start(unit["id"], destination["x"], destination["y"])
 
             if len(unit["navigationPath"]) == 0:
@@ -107,14 +102,11 @@ class MyBot(Bot):
             # If the unit is a worker and it sees at least one resource
             # then make it go to the first resource to collect it.
             if not any(item in campers for item in id_list) and unit["type"] == UnitType.WARRIOR and number_of_warriors >= 5:
-                api.say_something(unit["id"], f"I'm now camper")
                 campers.append(unit["id"])
 
             if unit["id"] in campers and 140 > state["time"] :
-                api.say_something(unit["id"], f"I'm camper")
                 if abs(unit["x"] - get_enemy_spawnpoint(6)["x"]) < 3 and abs(unit["y"] - get_enemy_spawnpoint(6)["y"]) < 3:
                     api.navigation_stop(unit["id"])
-                    api.say_something(unit["id"], f"I'm home")
                     aim_angle = math_util.angle_between_unit_and_point(unit, get_enemy_spawnpoint()["x"], get_enemy_spawnpoint()["y"])
                     if len(unit["opponentsInView"]) > 0:
                         api.shoot(unit["id"])
@@ -130,23 +122,20 @@ class MyBot(Bot):
             if unit["type"] == UnitType.WORKER:
                 # Call for backup
                 if len(unit["opponentsInView"]) > 1:
-                    # api.say_something(unit["id"], "Calling for backup ai ai ai")
                     dang_x = unit["x"]
                     dang_y = unit["y"]
                 # Fallback if health is low
-                if unit["health"] < constants.BULLET_DAMAGE_TO_WORKER * 2:
+                if unit["health"] < constants.BULLET_DAMAGE_TO_WORKER * 3:
                     if math_util.distance(unit["x"],unit["y"], constants.SPAWN_POINT.x, constants.SPAWN_POINT.y) > (math_util.distance(0,0,constants.MAP_WIDTH,constants.MAP_HEIGHT) / 4):
                         api.set_speed(unit["id"], Speed.FORWARD)
                         api.set_rotation(unit["id"], Rotation.LEFT)
                     else:
-                        api.say_something(unit["id"], "MENOX")
                         api.set_speed(unit["id"], Speed.FORWARD)
                         api.set_rotation(unit["id"], Rotation.SLOW_LEFT)
 
                 else:
                     # Collect res
                     if len(unit["resourcesInView"]) > 0:
-                        api.say_something(unit["id"], "Work work")
                         resource = unit["resourcesInView"][0]
                         api.navigation_start(unit["id"], resource["x"], resource["y"])
 
@@ -164,19 +153,15 @@ class MyBot(Bot):
             # If the unit is a warrior and it sees an opponent then make it shoot.
             if unit["type"] == UnitType.WARRIOR:
                 if not dang_x == 0 and not dang_y == 0 and len(unit["opponentsInView"]) == 0 and not unit["id"] in campers:
-                    api.say_something(unit["id"], "Roger that, COMING IN HOT!")
                     api.navigation_start(unit["id"], dang_x, dang_y, False)
                     dang_x = 0
                     dang_y = 0
                 if len(unit["opponentsInView"]) > 0:
-                    # api.say_something(unit["id"], "TROLOLOLOLO :D :---D")
                     opponent = unit["opponentsInView"][0]
                     aim_angle = math_util.angle_between_unit_and_point(unit, opponent["x"], opponent["y"])
                     if aim_angle < 0:
-                        # api.say_something(unit["id"], "NO-SCOPE 360 HEADSHOT")
                         api.set_rotation(unit["id"], Rotation.RIGHT)
                     else:
-                        # api.say_something(unit["id"], "MAD??")
                         api.set_rotation(unit["id"], Rotation.LEFT)
                     api.shoot(unit["id"])
 
@@ -187,8 +172,7 @@ class MyBot(Bot):
                         for opponent in teammate["opponentsInView"]:
                             distance = math_util.distance(unit["x"], unit["y"], opponent["x"], opponent["y"])
 
-                            if distance < constants.VIEWING_AREA_LENGTH * math.sqrt(2):
-                                # api.say_something(unit["id"], "im helping :D")
+                            if distance < constants.VIEWING_AREA_LENGTH * 2 ** 2 ** -1:
                                 api.navigation_start(unit["id"], opponent["x"], opponent["y"], False)
                                 found = True
                                 break
