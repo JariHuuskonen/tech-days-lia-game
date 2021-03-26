@@ -180,8 +180,8 @@ class MyBot(Bot):
                         for opponent in teammate["opponentsInView"]:
                             distance = math_util.distance(unit["x"], unit["y"], opponent["x"], opponent["y"])
 
-                            if distance < constants.VIEWING_AREA_LENGTH:
-                                api.say_something(unit["id"], "im helping :D")
+                            if distance < constants.VIEWING_AREA_LENGTH * math.sqrt(2):
+                                # api.say_something(unit["id"], "im helping :D")
                                 api.navigation_start(unit["id"], opponent["x"], opponent["y"], False)
                                 found = True
                                 break
