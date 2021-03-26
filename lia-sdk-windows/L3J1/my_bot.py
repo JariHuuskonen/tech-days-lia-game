@@ -45,7 +45,7 @@ class MyBot(Bot):
             else: number_of_warriors += 1
         # If from all of your units less than 60% are workers
         # and you have enough resources, then create a new worker.
-        if number_of_workers / len(state["units"]) < 0.45 and constants.GAME_DURATION * 0.533 > state["time"]:
+        if number_of_workers / len(state["units"]) < 0.55 and constants.GAME_DURATION * 0.420 > state["time"]:
             if state["resources"] >= constants.WORKER_PRICE:
                 api.spawn_unit(UnitType.WORKER)
         # Else if you can, spawn a new warrior
@@ -100,15 +100,22 @@ class MyBot(Bot):
                 if unit["health"] < constants.BULLET_DAMAGE_TO_WORKER * 2:
                     api.navigation_start(unit["id"], constants.SPAWN_POINT.x, constants.SPAWN_POINT.y, True)
                 else:
-                    # Dodge opponent warriors
-                    for opponent in unit["opponentsInView"]:
-                        if opponent["type"] == UnitType.WARRIOR:
-                            api.navigation_start(unit["id"], constants.SPAWN_POINT.x, constants.SPAWN_POINT.y, True)
                     # Collect res
                     if len(unit["resourcesInView"]) > 0:
                         api.say_something(unit["id"], "Work work")
                         resource = unit["resourcesInView"][0]
                         api.navigation_start(unit["id"], resource["x"], resource["y"])
+                    
+                    # Dodge opponent warriors
+                    for opponent in unit["opponentsInView"]:
+                        if opponent["type"] == UnitType.WARRIOR:
+                            
+                            dist_unit_opponent = math_util.distance(unit["x"],unit["y"],opponent["x"],opponent["y"])
+
+                            if dist_unit_opponent > constants.VIEWING_AREA_LENGTH/2:
+                                api.set_speed(unit["id"], Speed.BACKWARD)
+                            else:
+                                api.set_speed(unit["id"], Speed.FORWARD)
 
             # If the unit is a warrior and it sees an opponent then make it shoot.
             if unit["type"] == UnitType.WARRIOR and len(unit["opponentsInView"]) > 0:
