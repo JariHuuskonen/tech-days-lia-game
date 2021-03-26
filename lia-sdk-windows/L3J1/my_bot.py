@@ -135,7 +135,14 @@ class MyBot(Bot):
                     dang_y = unit["y"]
                 # Fallback if health is low
                 if unit["health"] < constants.BULLET_DAMAGE_TO_WORKER * 2:
-                    api.navigation_start(unit["id"], constants.SPAWN_POINT.x, constants.SPAWN_POINT.y, True)
+                    if math_util.distance(unit["x"],unit["y"], constants.SPAWN_POINT.x, constants.SPAWN_POINT.y) > (math_util.distance(0,0,constants.MAP_WIDTH,constants.MAP_HEIGHT) / 4):
+                        api.set_speed(unit["id"], Speed.FORWARD)
+                        api.set_rotation(unit["id"], Rotation.LEFT)
+                    else:
+                        api.say_something(unit["id"], "MENOX")
+                        api.set_speed(unit["id"], Speed.FORWARD)
+                        api.set_rotation(unit["id"], Rotation.SLOW_LEFT)
+
                 else:
                     # Collect res
                     if len(unit["resourcesInView"]) > 0:
