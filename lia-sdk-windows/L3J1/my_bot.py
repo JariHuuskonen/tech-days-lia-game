@@ -9,17 +9,14 @@ from lia import math_util
 from lia.bot import Bot
 from lia.networking_client import connect
 
-
 campers = []
+corners = []
 
 def get_enemy_spawnpoint(offset=0):
     offset = offset if constants.SPAWN_POINT.x < 0.5 * constants.MAP_WIDTH else -offset
     enemy_spawn_x = constants.MAP_WIDTH - constants.SPAWN_POINT.x + offset
     enemy_spawn_y =  constants.MAP_HEIGHT - constants.SPAWN_POINT.y + offset
     return {"x": round(enemy_spawn_x), "y": round(enemy_spawn_y)}
-
-
-
 
 # Initial implementation keeps picking random locations on the map
 # and sending units there. Worker units collect resources if they
@@ -35,14 +32,34 @@ class MyBot(Bot):
             for unit in state["units"]:
                 if unit["type"] == UnitType.WARRIOR:
                     if campers == []: campers.append(unit["id"])
+                # elif unit["type"] == UnitType.WORKER:
+                #     if corners == []: 
+                #         corners.append(unit["id"])
+                #         coords = {"x": unit["x"], "y": get_enemy_spawnpoint()["y"]}
+                #         while not constants.MAP[coords["x"]][coords["y"]]:
+                #             offset_y = -2
+                #             offset_x = -2 if unit["x"] > 0.5 * constants.MAP_WIDTH else 2
+                #             coords["y"] = get_enemy_spawnpoint(offset_y)
+                #             coords["x"] += offset_x
+                #             offset_y -= offset_y
+                #             offset_x += offset_x
+                #         api.navigation_start(unit["id"], coords["x"], coords["y"], False)
 
         id_list = []
+        resources_list = []
         number_of_workers = 0
         number_of_warriors = 0
+
         for unit in state["units"]:
             id_list.append(unit["id"])
             if unit["type"] == UnitType.WORKER: number_of_workers += 1
             else: number_of_warriors += 1
+
+            if len(unit["resourcesInView"]) > 0:
+                for resource in unit["resourcesInView"]:
+                    if {'x': resource["x"], 'y': resource["y"]} not in resources_list:
+                        resources_list.append({'x': resource["x"], 'y': resource["y"]})
+
         # If from all of your units less than 60% are workers
         # and you have enough resources, then create a new worker.
         if number_of_workers / len(state["units"]) < 0.55 and constants.GAME_DURATION * 0.420 > state["time"]:
@@ -51,15 +68,28 @@ class MyBot(Bot):
         # Else if you can, spawn a new warrior
         elif state["resources"] >= constants.WARRIOR_PRICE:
             api.spawn_unit(UnitType.WARRIOR)
-        # If you have enough resources to spawn a new warrior unit then spawn it.
-        if state["resources"] >= constants.WARRIOR_PRICE:
-            api.spawn_unit(UnitType.WARRIOR)
+        
 
         # We iterate through all of our units that are still alive.
         for unit in state["units"]:
             # If the unit is not going anywhere, we send it
             # to a random valid location on the map.
+            
+            if unit["type"] == UnitType.WORKER and len(unit["resourcesInView"]) == 0 and len(resources_list) > 0 and len(unit["navigationPath"]) == 0:
+                destination = {"x": 0, "y": 0, "dist": math_util.distance(0,0,constants.MAP_WIDTH,constants.MAP_HEIGHT), "index": -1 }
+                for i, resource in enumerate(resources_list):
+                    res_distance = math_util.distance(unit["x"], unit["y"], resource["x"], resource["y"])
+                    if not res_distance > constants.VIEWING_AREA_LENGTH * 2:
+                        if res_distance < destination["dist"]:
+                            destination = {'x': resource["x"], 'y': resource["y"], 'dist': res_distance, 'index': i}
+
+                resources_list.pop(destination["index"])
+                api.say_something(unit["id"], "Rushing B")
+                api.navigation_start(unit["id"], destination["x"], destination["y"])
+                
+
             if len(unit["navigationPath"]) == 0:
+
 
                 # Generate new x and y until you get a position on the map
                 # where there is no obstacle.
@@ -72,7 +102,7 @@ class MyBot(Bot):
                         # Send the unit to (x, y)
                         api.navigation_start(unit["id"], x, y)
                         break
-
+    
             # If the unit is a worker and it sees at least one resource
             # then make it go to the first resource to collect it.
             if not any(item in campers for item in id_list) and unit["type"] == UnitType.WARRIOR and number_of_warriors >= 5:
@@ -80,6 +110,7 @@ class MyBot(Bot):
                 campers.append(unit["id"])
 
             if unit["id"] in campers and 140 > state["time"] :
+                api.say_something(unit["id"], f"I'm camper")
                 if abs(unit["x"] - get_enemy_spawnpoint(6)["x"]) < 3 and abs(unit["y"] - get_enemy_spawnpoint(6)["y"]) < 3:
                     api.navigation_stop(unit["id"])
                     api.say_something(unit["id"], f"I'm home")
@@ -105,7 +136,7 @@ class MyBot(Bot):
                         api.say_something(unit["id"], "Work work")
                         resource = unit["resourcesInView"][0]
                         api.navigation_start(unit["id"], resource["x"], resource["y"])
-                    
+
                     # Dodge opponent warriors
                     for opponent in unit["opponentsInView"]:
                         if opponent["type"] == UnitType.WARRIOR:
