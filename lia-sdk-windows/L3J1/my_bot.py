@@ -32,10 +32,6 @@ class MyBot(Bot):
     # - GameState reference: https://docs.liagame.com/api/#gamestate
     # - Api reference:       https://docs.liagame.com/api/#api-object
     def update(self, state, api):
-        if state["time"] == 0:
-            for unit in state["units"]:
-                if unit["type"] == UnitType.WARRIOR:
-                    if campers == []: campers.append(unit["id"])
 
         id_list = []
         resources_list = []
@@ -101,7 +97,7 @@ class MyBot(Bot):
     
             # If the unit is a worker and it sees at least one resource
             # then make it go to the first resource to collect it.
-            if not any(item in campers for item in id_list) and unit["type"] == UnitType.WARRIOR and number_of_warriors >= 5:
+            if not any(item in campers for item in id_list) and unit["type"] == UnitType.WARRIOR and number_of_warriors >= 4 and state["time"] > 10:
                 campers.append(unit["id"])
 
             if unit["id"] in campers and 140 > state["time"] :
