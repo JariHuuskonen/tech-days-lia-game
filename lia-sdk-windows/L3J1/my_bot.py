@@ -148,17 +148,35 @@ class MyBot(Bot):
                                 api.set_speed(unit["id"], Speed.FORWARD)
 
             # If the unit is a warrior and it sees an opponent then make it shoot.
-            if unit["type"] == UnitType.WARRIOR and len(unit["opponentsInView"]) > 0:
-                api.say_something(unit["id"], "TROLOLOLOLO :D :---D")
-                opponent = unit["opponentsInView"][0]
-                aim_angle = math_util.angle_between_unit_and_point(unit, opponent["x"], opponent["y"])
-                if aim_angle < 0:
-                    api.say_something(unit["id"], "NO-SCOPE 360 HEADSHOT")
-                    api.set_rotation(unit["id"], Rotation.RIGHT)
-                else:
-                    api.say_something(unit["id"], "MAD??")
-                    api.set_rotation(unit["id"], Rotation.LEFT)
-                api.shoot(unit["id"])
+            if unit["type"] == UnitType.WARRIOR:
+                if len(unit["opponentsInView"]) > 0:
+                    # api.say_something(unit["id"], "TROLOLOLOLO :D :---D")
+                    opponent = unit["opponentsInView"][0]
+                    aim_angle = math_util.angle_between_unit_and_point(unit, opponent["x"], opponent["y"])
+                    if aim_angle < 0:
+                        # api.say_something(unit["id"], "NO-SCOPE 360 HEADSHOT")
+                        api.set_rotation(unit["id"], Rotation.RIGHT)
+                    else:
+                        # api.say_something(unit["id"], "MAD??")
+                        api.set_rotation(unit["id"], Rotation.LEFT)
+                    api.shoot(unit["id"])
+
+                if len(unit["opponentsInView"]) == 0 and not unit["id"] in campers:
+                    for teammate in state["units"]:
+                        found = False
+
+                        for opponent in teammate["opponentsInView"]:
+                            distance = math_util.distance(unit["x"], unit["y"], opponent["x"], opponent["y"])
+
+                            if distance < constants.VIEWING_AREA_LENGTH:
+                                api.say_something(unit["id"], "im helping :D")
+                                api.navigation_start(unit["id"], opponent["x"], opponent["y"], False)
+                                found = True
+                                break
+
+                        if found:
+                            break
+
 
 # Connects your bot to Lia game engine, don't change it.
 if __name__ == "__main__":
